@@ -1,9 +1,32 @@
 import React, {useEffect, useState} from 'react';
-import {FlatList, PermissionsAndroid, Platform, TouchableOpacity, View} from 'react-native';
-import {Button, Card, Provider as PaperProvider, Text} from 'react-native-paper';
+import {FlatList, PermissionsAndroid, Platform, StyleSheet, TouchableOpacity, View} from 'react-native';
+import {Button, Card, Icon, Text} from 'react-native-paper';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {BleManager, Device, State} from 'react-native-ble-plx';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from './App.tsx';
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        padding: 20,
+        gap: 4,
+    },
+});
+
+const DisabledBluetoothNotice = () => (
+    <>
+        <Text variant="headlineMedium">
+            <Ionicons name="close" size={32} color="#4F8EF7" />
+            <Icon source={{ uri: 'close' }} size={32}/>
+            <FontAwesome name="star" size={30} color="gold" />
+            <MaterialIcons name="menu" size={30} color="black" />
+            Bluetooth is disabled
+        </Text>
+    </>
+);
 
 
 const bleManager = new BleManager();
@@ -68,40 +91,37 @@ function HomeScreen({navigation}: HomeScreenProps) {
     };
 
     return (
-        <PaperProvider>
-            <View style={{flex: 1, padding: 20}}>
-                <Text variant="titleLarge" style={{marginBottom: 20, textAlign: 'center'}}>
-                    Bluetooth Devices
-                </Text>
+        <View style={styles.container}>
+            <Text variant="titleLarge" style={{marginBottom: 20, textAlign: 'center'}}>
+                Bluetooth Devices
+            </Text>
 
-                {bluetoothState === State.PoweredOff ? (
-                    <Text style={{textAlign: 'center', color: 'red', marginBottom: 20}}>
-                        ❌ Bluetooth is OFF. Please turn it on.
-                    </Text>
-                ) : (
-                    <>
-                        <Button mode="contained" onPress={startScan} loading={scanning} style={{marginBottom: 20}}>
-                            {scanning ? 'Scanning...' : 'Refresh Devices'}
-                        </Button>
+            {bluetoothState === State.PoweredOff ? (<DisabledBluetoothNotice/>) : (
+                <>
+                    <Button mode="contained"
+                            onPress={startScan}
+                            loading={scanning}
+                            style={{marginBottom: 20}}>
+                        {scanning ? 'Scanning...' : 'Refresh Devices'}
+                    </Button>
 
-                        <FlatList
-                            data={devices}
-                            keyExtractor={(item: Device) => item.id}
-                            renderItem={({item}) => (
-                                <TouchableOpacity onPress={() => navigation.navigate('DeviceScreen', {device: item})}>
-                                    <Card style={{marginBottom: 10}}>
-                                        <Card.Content>
-                                            <Text variant="titleMedium">{item.name || 'Unknown Device'}</Text>
-                                            <Text variant="bodySmall">{item.id}</Text>
-                                        </Card.Content>
-                                    </Card>
-                                </TouchableOpacity>
-                            )}
-                        />
-                    </>
-                )}
-            </View>
-        </PaperProvider>
+                    <FlatList
+                        data={devices}
+                        keyExtractor={(item: Device) => item.id}
+                        renderItem={({item}) => (
+                            <TouchableOpacity onPress={() => navigation.navigate('DeviceScreen', {device: item})}>
+                                <Card>
+                                    <Card.Content>
+                                        <Text variant="titleMedium">{item.name || 'Unknown Device'}</Text>
+                                        <Text variant="bodySmall">{item.id}</Text>
+                                    </Card.Content>
+                                </Card>
+                            </TouchableOpacity>
+                        )}
+                    />
+                </>
+            )}
+        </View>
     );
 }
 

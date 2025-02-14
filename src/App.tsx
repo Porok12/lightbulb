@@ -7,6 +7,7 @@ import {
     NavigationContainer,
 } from '@react-navigation/native';
 import type {Device} from 'react-native-ble-plx';
+import merge from 'deepmerge';
 import HomeScreen from './HomeScreen.tsx';
 import DeviceScreen from './DeviceScreen.tsx';
 
@@ -25,22 +26,8 @@ const {LightTheme, DarkTheme} = adaptNavigationTheme({
     reactNavigationDark: NavigationDarkTheme,
 });
 
-const CombinedDefaultTheme = {
-    ...MD3LightTheme,
-    ...LightTheme,
-    colors: {
-        ...MD3LightTheme.colors,
-        ...LightTheme.colors,
-    },
-};
-const CombinedDarkTheme = {
-    ...MD3DarkTheme,
-    ...DarkTheme,
-    colors: {
-        ...MD3DarkTheme.colors,
-        ...DarkTheme.colors,
-    },
-};
+const CombinedDefaultTheme = merge(MD3LightTheme, LightTheme);
+const CombinedDarkTheme = merge(MD3DarkTheme, DarkTheme);
 
 export default function App() {
     return (
