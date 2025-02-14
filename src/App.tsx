@@ -1,13 +1,13 @@
-import React from "react";
-import {adaptNavigationTheme, MD3DarkTheme, MD3LightTheme, Provider as PaperProvider} from "react-native-paper";
-import {createNativeStackNavigator} from "@react-navigation/native-stack";
+import React from 'react';
+import {adaptNavigationTheme, MD3DarkTheme, MD3LightTheme, Provider as PaperProvider} from 'react-native-paper';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {
     DarkTheme as NavigationDarkTheme,
     DefaultTheme as NavigationDefaultTheme,
     NavigationContainer,
 } from '@react-navigation/native';
-import HomeScreen from "./HomeScreen.tsx";
-import DeviceScreen from "./DeviceScreen.tsx";
+import HomeScreen from './HomeScreen.tsx';
+import DeviceScreen from './DeviceScreen.tsx';
 
 const Stack = createNativeStackNavigator();
 

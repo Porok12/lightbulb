@@ -1,7 +1,7 @@
-import React, {useEffect, useState} from "react";
-import {FlatList, PermissionsAndroid, Platform, TouchableOpacity, View} from "react-native";
-import {Button, Card, Provider as PaperProvider, Text} from "react-native-paper";
-import {BleManager, Device, State} from "react-native-ble-plx";
+import React, {useEffect, useState} from 'react';
+import {FlatList, PermissionsAndroid, Platform, TouchableOpacity, View} from 'react-native';
+import {Button, Card, Provider as PaperProvider, Text} from 'react-native-paper';
+import {BleManager, Device, State} from 'react-native-ble-plx';
 
 
 const bleManager = new BleManager();
@@ -18,7 +18,7 @@ function HomeScreen({navigation}) {
 
     // Request Bluetooth permissions (Android only)
     const requestPermissions = async () => {
-        if (Platform.OS === "android") {
+        if (Platform.OS === 'android') {
             await PermissionsAndroid.requestMultiple([
                 PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
                 PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
@@ -34,14 +34,14 @@ function HomeScreen({navigation}) {
 
     // Start scanning for BLE devices
     const startScan = () => {
-        if (bluetoothState !== State.PoweredOn) return;
+        if (bluetoothState !== State.PoweredOn) {return;}
 
         setDevices([]);
         setScanning(true);
 
         bleManager.startDeviceScan(null, null, (error, device) => {
             if (error) {
-                console.error("Scan Error:", error);
+                console.error('Scan Error:', error);
                 setScanning(false);
                 return;
             }
@@ -64,28 +64,28 @@ function HomeScreen({navigation}) {
     return (
         <PaperProvider>
             <View style={{flex: 1, padding: 20}}>
-                <Text variant="titleLarge" style={{marginBottom: 20, textAlign: "center"}}>
+                <Text variant="titleLarge" style={{marginBottom: 20, textAlign: 'center'}}>
                     Bluetooth Devices
                 </Text>
 
                 {bluetoothState === State.PoweredOff ? (
-                    <Text style={{textAlign: "center", color: "red", marginBottom: 20}}>
+                    <Text style={{textAlign: 'center', color: 'red', marginBottom: 20}}>
                         ❌ Bluetooth is OFF. Please turn it on.
                     </Text>
                 ) : (
                     <>
                         <Button mode="contained" onPress={startScan} loading={scanning} style={{marginBottom: 20}}>
-                            {scanning ? "Scanning..." : "Refresh Devices"}
+                            {scanning ? 'Scanning...' : 'Refresh Devices'}
                         </Button>
 
                         <FlatList
                             data={devices}
                             keyExtractor={(item) => item.id}
                             renderItem={({item}) => (
-                                <TouchableOpacity onPress={() => navigation.navigate("Device", {device: item})}>
+                                <TouchableOpacity onPress={() => navigation.navigate('Device', {device: item})}>
                                     <Card style={{marginBottom: 10}}>
                                         <Card.Content>
-                                            <Text variant="titleMedium">{item.name || "Unknown Device"}</Text>
+                                            <Text variant="titleMedium">{item.name || 'Unknown Device'}</Text>
                                             <Text variant="bodySmall">{item.id}</Text>
                                         </Card.Content>
                                     </Card>
