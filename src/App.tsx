@@ -1,11 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { View, FlatList, PermissionsAndroid, Platform } from "react-native";
+import { View, FlatList, PermissionsAndroid, Platform, TouchableOpacity } from "react-native";
 import { Provider as PaperProvider, Button, Text, Card } from "react-native-paper";
 import { BleManager, Device, State } from "react-native-ble-plx";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import {
+    NavigationContainer,
+    DarkTheme as NavigationDarkTheme,
+    DefaultTheme as NavigationDefaultTheme,
+} from '@react-navigation/native';
+import {
+    MD3DarkTheme,
+    MD3LightTheme,
+    adaptNavigationTheme,
+} from 'react-native-paper';
+import ColorPicker, { Panel1, Swatches, Preview, OpacitySlider, HueSlider } from "reanimated-color-picker";
 
 const bleManager = new BleManager();
+const Stack = createNativeStackNavigator();
 
-export default function App() {
+// 🔹 Home Screen (BLE Scanner)
+function HomeScreen({ navigation }) {
     const [devices, setDevices] = useState<Device[]>([]);
     const [scanning, setScanning] = useState(false);
     const [bluetoothState, setBluetoothState] = useState<State | null>(null);
@@ -31,13 +45,11 @@ export default function App() {
         bleManager.onStateChange((newState) => setBluetoothState(newState), true);
     };
 
-    // Function to start scanning for BLE devices
+    // Start scanning for BLE devices
     const startScan = () => {
-        if (bluetoothState !== State.PoweredOn) {
-            return;
-        }
+        if (bluetoothState !== State.PoweredOn) return;
 
-        setDevices([]); // Clear previous results
+        setDevices([]);
         setScanning(true);
 
         bleManager.startDeviceScan(null, null, (error, device) => {
@@ -75,13 +87,7 @@ export default function App() {
                     </Text>
                 ) : (
                     <>
-                        <Button
-                            mode="contained"
-                            onPress={startScan}
-                            loading={scanning}
-                            style={{ marginBottom: 20 }}
-                            disabled={bluetoothState !== State.PoweredOn}
-                        >
+                        <Button mode="contained" onPress={startScan} loading={scanning} style={{ marginBottom: 20 }}>
                             {scanning ? "Scanning..." : "Refresh Devices"}
                         </Button>
 
@@ -89,17 +95,78 @@ export default function App() {
                             data={devices}
                             keyExtractor={(item) => item.id}
                             renderItem={({ item }) => (
-                                <Card style={{ marginBottom: 10 }}>
-                                    <Card.Content>
-                                        <Text variant="titleMedium">{item.name || "Unknown Device"}</Text>
-                                        <Text variant="bodySmall">{item.id}</Text>
-                                    </Card.Content>
-                                </Card>
+                                <TouchableOpacity onPress={() => navigation.navigate("Device", { device: item })}>
+                                    <Card style={{ marginBottom: 10 }}>
+                                        <Card.Content>
+                                            <Text variant="titleMedium">{item.name || "Unknown Device"}</Text>
+                                            <Text variant="bodySmall">{item.id}</Text>
+                                        </Card.Content>
+                                    </Card>
+                                </TouchableOpacity>
                             )}
                         />
                     </>
                 )}
             </View>
+        </PaperProvider>
+    );
+}
+
+// 🔹 Device Screen (Opens when a device is clicked)
+function DeviceScreen({ route }) {
+    const { device } = route.params;
+
+    const onSelectColor = ({ hex }) => {
+        console.log(hex);
+    };
+
+    return (
+        <PaperProvider>
+            <View style={{ flex: 1, justifyContent: "center", alignItems: "center"}}>
+                <Text variant="titleLarge">Test</Text>
+                <Text variant="bodyMedium">{device.name || "Unknown Device"}</Text>
+                <Text variant="bodySmall">{device.id}</Text>
+
+                <ColorPicker style={{ width: '70%' }} value='red' onComplete={onSelectColor}>
+                    <Preview />
+                    <Panel1 />
+                </ColorPicker>
+            </View>
+        </PaperProvider>
+    );
+}
+
+const { LightTheme, DarkTheme } = adaptNavigationTheme({
+    reactNavigationLight: NavigationDefaultTheme,
+    reactNavigationDark: NavigationDarkTheme,
+});
+
+const CombinedDefaultTheme = {
+    ...MD3LightTheme,
+    ...LightTheme,
+    colors: {
+        ...MD3LightTheme.colors,
+        ...LightTheme.colors,
+    },
+};
+const CombinedDarkTheme = {
+    ...MD3DarkTheme,
+    ...DarkTheme,
+    colors: {
+        ...MD3DarkTheme.colors,
+        ...DarkTheme.colors,
+    },
+};
+
+export default function App() {
+    return (
+        <PaperProvider theme={CombinedDarkTheme}>
+            <NavigationContainer theme={CombinedDarkTheme}>
+                <Stack.Navigator initialRouteName="Home">
+                    <Stack.Screen name="Home" component={HomeScreen} />
+                    <Stack.Screen name="Device" component={DeviceScreen} />
+                </Stack.Navigator>
+            </NavigationContainer>
         </PaperProvider>
     );
 }
