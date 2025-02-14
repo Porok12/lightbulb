@@ -2,11 +2,15 @@ import React from 'react';
 import {View} from 'react-native';
 import {Provider as PaperProvider, Text} from 'react-native-paper';
 import ColorPicker, {Panel1, Preview} from 'reanimated-color-picker';
+import {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {RootStackParamList} from './App.tsx';
 
-function DeviceScreen({route}) {
+type DeviceScreenProps = NativeStackScreenProps<RootStackParamList, 'DeviceScreen'>;
+
+function DeviceScreen({route}: DeviceScreenProps) {
     const {device} = route.params;
 
-    const onSelectColor = ({hex}) => {
+    const onSelectColor = ({hex}: { hex: string }) => {
         console.log(hex);
     };
 

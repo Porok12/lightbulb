@@ -2,11 +2,15 @@ import React, {useEffect, useState} from 'react';
 import {FlatList, PermissionsAndroid, Platform, TouchableOpacity, View} from 'react-native';
 import {Button, Card, Provider as PaperProvider, Text} from 'react-native-paper';
 import {BleManager, Device, State} from 'react-native-ble-plx';
+import {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {RootStackParamList} from './App.tsx';
 
 
 const bleManager = new BleManager();
 
-function HomeScreen({navigation}) {
+type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'HomeScreen'>;
+
+function HomeScreen({navigation}: HomeScreenProps) {
     const [devices, setDevices] = useState<Device[]>([]);
     const [scanning, setScanning] = useState(false);
     const [bluetoothState, setBluetoothState] = useState<State | null>(null);
@@ -34,7 +38,9 @@ function HomeScreen({navigation}) {
 
     // Start scanning for BLE devices
     const startScan = () => {
-        if (bluetoothState !== State.PoweredOn) {return;}
+        if (bluetoothState !== State.PoweredOn) {
+            return;
+        }
 
         setDevices([]);
         setScanning(true);
@@ -80,9 +86,9 @@ function HomeScreen({navigation}) {
 
                         <FlatList
                             data={devices}
-                            keyExtractor={(item) => item.id}
+                            keyExtractor={(item: Device) => item.id}
                             renderItem={({item}) => (
-                                <TouchableOpacity onPress={() => navigation.navigate('Device', {device: item})}>
+                                <TouchableOpacity onPress={() => navigation.navigate('DeviceScreen', {device: item})}>
                                     <Card style={{marginBottom: 10}}>
                                         <Card.Content>
                                             <Text variant="titleMedium">{item.name || 'Unknown Device'}</Text>

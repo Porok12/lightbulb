@@ -6,10 +6,18 @@ import {
     DefaultTheme as NavigationDefaultTheme,
     NavigationContainer,
 } from '@react-navigation/native';
+import type {Device} from 'react-native-ble-plx';
 import HomeScreen from './HomeScreen.tsx';
 import DeviceScreen from './DeviceScreen.tsx';
 
-const Stack = createNativeStackNavigator();
+/**
+ * https://reactnavigation.org/docs/typescript/?config=dynamic
+ */
+export type RootStackParamList = {
+    HomeScreen: undefined;
+    DeviceScreen: { device: Device };
+};
+const RootStack = createNativeStackNavigator<RootStackParamList>();
 
 
 const {LightTheme, DarkTheme} = adaptNavigationTheme({
@@ -37,11 +45,11 @@ const CombinedDarkTheme = {
 export default function App() {
     return (
         <PaperProvider theme={CombinedDarkTheme}>
-            <NavigationContainer theme={CombinedDarkTheme}>
-                <Stack.Navigator initialRouteName="Home">
-                    <Stack.Screen name="Home" component={HomeScreen}/>
-                    <Stack.Screen name="Device" component={DeviceScreen}/>
-                </Stack.Navigator>
+            <NavigationContainer theme={CombinedDarkTheme as any}>
+                <RootStack.Navigator initialRouteName="HomeScreen">
+                    <RootStack.Screen name="HomeScreen" component={HomeScreen}/>
+                    <RootStack.Screen name="DeviceScreen" component={DeviceScreen}/>
+                </RootStack.Navigator>
             </NavigationContainer>
         </PaperProvider>
     );
