@@ -1,7 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {FlatList, PermissionsAndroid, Platform, StyleSheet, TouchableOpacity, View} from 'react-native';
 import {Button, Card, Icon, Text} from 'react-native-paper';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {BleManager, Device, State} from 'react-native-ble-plx';
@@ -19,10 +18,8 @@ const styles = StyleSheet.create({
 const DisabledBluetoothNotice = () => (
     <>
         <Text variant="headlineMedium">
-            <Ionicons name="close" size={32} color="#4F8EF7" />
-            <Icon source={{ uri: 'close' }} size={32}/>
-            <FontAwesome name="star" size={30} color="gold" />
-            <MaterialIcons name="menu" size={30} color="black" />
+            <FontAwesome name="close" size={32}/>
+            {' '}
             Bluetooth is disabled
         </Text>
     </>
@@ -93,7 +90,7 @@ function HomeScreen({navigation}: HomeScreenProps) {
     return (
         <View style={styles.container}>
             <Text variant="titleLarge" style={{marginBottom: 20, textAlign: 'center'}}>
-                Bluetooth Devices
+                Devices
             </Text>
 
             {bluetoothState === State.PoweredOff ? (<DisabledBluetoothNotice/>) : (
