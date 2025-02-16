@@ -46,6 +46,7 @@ function HomeScreen({navigation}: HomeScreenProps) {
             await PermissionsAndroid.requestMultiple([
                 PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
                 PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+                PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
             ]);
         }
     };
@@ -84,7 +85,7 @@ function HomeScreen({navigation}: HomeScreenProps) {
         setTimeout(() => {
             bleManager.stopDeviceScan();
             setScanning(false);
-        }, 5000);
+        }, 10000);
     };
 
     return (
