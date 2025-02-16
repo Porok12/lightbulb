@@ -73,7 +73,7 @@ function HomeScreen({navigation}: HomeScreenProps) {
                 return;
             }
 
-            if (device && device.name) {
+            if (device) {
                 setDevices((prevDevices) => {
                     const exists = prevDevices.some((d) => d.id === device.id);
                     return exists ? prevDevices : [...prevDevices, device];
