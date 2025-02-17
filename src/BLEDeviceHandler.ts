@@ -2,10 +2,10 @@ import {BleManager, Device} from 'react-native-ble-plx';
 import {PermissionsAndroid, Platform} from 'react-native';
 import {Buffer} from 'buffer';
 
-const DEVICE_INFO_SERVICE_UUID = '180A'; // Device Info
-const FIRMWARE_VERSION_UUID = '2A26'; // Firmware Version
-const BATTERY_SERVICE_UUID = '180F'; // Battery Service
-const BATTERY_CHARACTERISTIC_UUID = '2A19'; // Battery Level
+const DEVICE_INFO_SERVICE_UUID = '0000180A-0000-1000-8000-00805F9B34FB'; // Device Info
+const FIRMWARE_VERSION_UUID = '00002A26-0000-1000-8000-00805F9B34FB'; // Firmware Version
+const BATTERY_SERVICE_UUID = '0000180F-0000-1000-8000-00805F9B34FB'; // Battery Service
+const BATTERY_CHARACTERISTIC_UUID = '00002A19-0000-1000-8000-00805F9B34FB'; // Battery Level
 const LIGHT_SERVICE_UUID = '12345678-1234-5678-1234-56789abcdef0'; // Light Service
 const LIGHT_CHARACTERISTIC_UUID = 'abcdef01-1234-5678-1234-56789abcdef0'; // Light Color
 
