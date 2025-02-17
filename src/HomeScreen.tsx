@@ -1,11 +1,11 @@
 import React, {useEffect, useState} from 'react';
-import {FlatList, PermissionsAndroid, Platform, StyleSheet, TouchableOpacity, View} from 'react-native';
-import {Button, Card, Icon, Text} from 'react-native-paper';
+import {FlatList, StyleSheet, TouchableOpacity, View} from 'react-native';
+import {Button, Card, Text} from 'react-native-paper';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {BleManager, Device, State} from 'react-native-ble-plx';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from './App.tsx';
+import BLEDeviceHandler from './BLEDeviceHandler.ts';
 
 const styles = StyleSheet.create({
     container: {
@@ -13,17 +13,64 @@ const styles = StyleSheet.create({
         padding: 20,
         gap: 4,
     },
+    cardItem: {
+        padding: 10,
+        margin: 10,
+    },
+    cardContent: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+    },
+    searchButton: {
+        marginBottom: 20,
+    },
+    centerIcon: {
+        textAlign: 'center',
+        flexGrow: 1,
+    },
 });
 
 const DisabledBluetoothNotice = () => (
     <>
         <Text variant="headlineMedium">
-            <FontAwesome name="close" size={32}/>
+            <FontAwesome name="bluetooth" size={32}/>
             {' '}
             Bluetooth is disabled
         </Text>
     </>
 );
+
+const DeviceCard = ({device}: { device: Device }) => {
+    const [services, setServices] = useState<string[]>([]);
+
+    useEffect(() => {
+        const fetchServices = async () => {
+            try {
+                await device.discoverAllServicesAndCharacteristics();
+                const serviceList = await device.services();
+                setServices(serviceList.map(s => s.uuid));
+            } catch (e) {
+                // Will fail if not connected
+                setServices([]);
+            }
+        };
+
+        fetchServices();
+    }, [device]);
+
+    return (
+        <Card style={styles.cardItem}>
+            <View style={styles.cardContent}>
+                <View>
+                    <Text variant="titleMedium">{device.name || 'Unknown Device'}</Text>
+                    <Text variant="bodySmall">{device.id}</Text>
+                </View>
+                <FontAwesome name="bluetooth" size={24} color="gray"/>
+            </View>
+        </Card>
+    );
+};
 
 
 const bleManager = new BleManager();
@@ -36,28 +83,15 @@ function HomeScreen({navigation}: HomeScreenProps) {
     const [bluetoothState, setBluetoothState] = useState<State | null>(null);
 
     useEffect(() => {
-        requestPermissions();
+        BLEDeviceHandler.requestPermissions();
         checkBluetoothState();
     }, []);
 
-    // Request Bluetooth permissions (Android only)
-    const requestPermissions = async () => {
-        if (Platform.OS === 'android') {
-            await PermissionsAndroid.requestMultiple([
-                PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
-                PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
-                PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-            ]);
-        }
-    };
-
-    // Check if Bluetooth is ON or OFF
     const checkBluetoothState = () => {
         bleManager.state().then(setBluetoothState);
         bleManager.onStateChange((newState) => setBluetoothState(newState), true);
     };
 
-    // Start scanning for BLE devices
     const startScan = () => {
         if (bluetoothState !== State.PoweredOn) {
             return;
@@ -81,11 +115,10 @@ function HomeScreen({navigation}: HomeScreenProps) {
             }
         });
 
-        // Stop scanning after 5 seconds
         setTimeout(() => {
             bleManager.stopDeviceScan();
             setScanning(false);
-        }, 10000);
+        }, 8000);
     };
 
     return (
@@ -94,31 +127,41 @@ function HomeScreen({navigation}: HomeScreenProps) {
                 Devices
             </Text>
 
-            {bluetoothState === State.PoweredOff ? (<DisabledBluetoothNotice/>) : (
-                <>
-                    <Button mode="contained"
-                            onPress={startScan}
-                            loading={scanning}
-                            style={{marginBottom: 20}}>
-                        {scanning ? 'Scanning...' : 'Refresh Devices'}
-                    </Button>
+            {bluetoothState === State.PoweredOff && (<DisabledBluetoothNotice/>)}
 
+            {bluetoothState === State.PoweredOn && devices.length === 0 && (
+                <Text style={styles.centerIcon}>
+                    <FontAwesome name="inbox" size={128}/>
+                </Text>
+            )}
+
+            {bluetoothState === State.PoweredOn && devices.length > 0 && (
+                <>
                     <FlatList
                         data={devices}
                         keyExtractor={(item: Device) => item.id}
                         renderItem={({item}) => (
-                            <TouchableOpacity onPress={() => navigation.navigate('DeviceScreen', {device: item})}>
-                                <Card>
-                                    <Card.Content>
-                                        <Text variant="titleMedium">{item.name || 'Unknown Device'}</Text>
-                                        <Text variant="bodySmall">{item.id}</Text>
-                                    </Card.Content>
-                                </Card>
+                            <TouchableOpacity key={item.id}
+                                              onPress={() => navigation.navigate('DeviceScreen', {device: item})}>
+                                <DeviceCard key={item.id} device={item}/>
                             </TouchableOpacity>
                         )}
                     />
                 </>
             )}
+
+            <Button mode="contained"
+                    onPress={startScan}
+                    loading={scanning}
+                    disabled={scanning || bluetoothState !== State.PoweredOn}
+                    style={styles.searchButton}>
+                <Text adjustsFontSizeToFit>
+                    <FontAwesome name="search" size={16}/>
+                    {' '}
+                    {scanning ? 'Scanning...' : 'Search Devices'}
+                </Text>
+            </Button>
+
         </View>
     );
 }

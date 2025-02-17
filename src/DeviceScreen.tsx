@@ -1,14 +1,24 @@
 import React, {useEffect, useState} from 'react';
-import {StyleSheet, View} from 'react-native';
-import {Text} from 'react-native-paper';
-import ColorPicker, {BrightnessSlider, HueSlider, Panel1, Preview} from 'reanimated-color-picker';
-import {BleManager, Device} from 'react-native-ble-plx';
+import {StyleSheet, useWindowDimensions, View} from 'react-native';
+import {Button, Text, useTheme} from 'react-native-paper';
+import ColorPicker, {
+    BrightnessSlider,
+    HSLSaturationSlider,
+    HueSlider,
+    LuminanceSlider,
+    Panel2,
+    Preview,
+} from 'reanimated-color-picker';
+import {Device} from 'react-native-ble-plx';
+import {Route, SceneRendererProps, TabBar, TabView} from 'react-native-tab-view';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from './App.tsx';
+import BLEDeviceHandler, {services} from './BLEDeviceHandler.ts';
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        justifyContent: 'space-between',
         padding: 20,
         gap: 4,
     },
@@ -31,73 +41,119 @@ const styles = StyleSheet.create({
     },
 });
 
-const bleManager = new BleManager();
-const ESP32_SERVICE_UUID = 'f3b5e3a6-7fd5-4a0a-832f-63bb1e98e7f5';
-const DEVICE_CHARACTERISTIC_UUID = 'a7e82db5-bbef-4f24-b451-37d60c6a30e2';
-
-type DeviceScreenProps = NativeStackScreenProps<RootStackParamList, 'DeviceScreen'>;
-
-const buildCommand = (rgbw: { r: number, g: number, b: number, w: number }) => {
-    const {r, g, b, w} = rgbw;
-    const rgbwArray = [r, g, b, w];
-    const byteArray = new Uint8Array([0x01, ...rgbwArray]);
-    return byteArray;
-};
-
 let debugCounter = 0;
-const sendColorToDevice = async (device: Device, payload: Uint8Array) => {
-    debugCounter++;
-    try {
-        console.log(`Sending RGBW bytes:`, payload);
+let errorCounter = 0;
+let errorMsg: string = '';
 
-        const connectedDevice = await bleManager.connectToDevice(device.id);
-        await connectedDevice.discoverAllServicesAndCharacteristics();
+const routes = [
+    {key: 'info', title: 'Info'},
+    {key: 'color', title: 'Color'},
+    {key: 'debug', title: 'Debug'},
+];
 
-        await connectedDevice.writeCharacteristicWithoutResponseForService(
-            DEVICE_CHARACTERISTIC_UUID,
-            DEVICE_CHARACTERISTIC_UUID,
-            Buffer.from(payload).toString('base64'),
-        );
-    } catch (error) {
-        console.error('Error sending color:', error);
-    }
+type InfoRouteProps = {
+    device: Device;
+    connected: boolean;
+    onConnect?: () => void;
+    onConnected?: () => void;
 };
 
-function DeviceScreen({route}: DeviceScreenProps) {
-    const {device} = route.params;
-    const [connected, setConnected] = useState<boolean | null>(null);
-    const isLightBulb = device.serviceUUIDs?.includes(ESP32_SERVICE_UUID);
+const InfoRoute = (props: InfoRouteProps) => {
+    const {device, connected, onConnect, onConnected} = props;
 
+    const [loading, setLoading] = useState(false);
+    const [firmwareVersion, setFirmwareVersion] = useState<string | null>(null);
+    const [batteryLevel, setBatteryLevel] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (connected) {
+            BLEDeviceHandler.readFirmwareVersion().then(version => setFirmwareVersion(version));
+            BLEDeviceHandler.readBatteryLevel().then(level => setBatteryLevel(level));
+        }
+    }, [connected]);
+
+    const handleConnect = () => {
+        const onSuccessful = () => {
+            // onConnect?.();
+        };
+        const onError = (error: any) => {
+            errorMsg = `HandleConnect: ${error}`;
+        };
+        setLoading(true);
+        BLEDeviceHandler.connectToDevice(device, onSuccessful)
+            .then(() => {
+                onConnected?.();
+            })
+            .catch(error => {
+                errorMsg = `ConnectToDevice: ${error}`;
+            })
+            .finally(() => {
+                setLoading(false);
+            });
+    };
+
+    return (
+        <View style={styles.container}>
+            <View>
+                <Text variant="titleLarge">{device.name || 'Unknown Device'}</Text>
+                <Text variant="bodyMedium">{device.id}</Text>
+                <Text variant="bodySmall">Connection status: {connected ? 'Connected' : 'Disconnected'}</Text>
+
+                <Text variant="titleLarge" style={{marginTop: 10}}>Services</Text>
+                {device.serviceUUIDs?.includes(services.deviceInfo.serviceUUID) && (
+                    <>
+                        <Text variant="titleSmall">Device Info</Text>
+                        <Text variant="bodyMedium">Firmware version: {firmwareVersion}</Text>
+                    </>
+                )}
+                {device.serviceUUIDs?.includes(services.battery.serviceUUID) && (
+                    <>
+                        <Text variant="titleSmall">Battery</Text>
+                        <Text variant="bodyMedium">Level: {batteryLevel}</Text>
+                    </>
+                )}
+                {device.serviceUUIDs?.includes(services.light.serviceUUID) && (
+                    <>
+                        <Text variant="titleSmall">Light</Text>
+                        <Text variant="bodyMedium">---</Text>
+                    </>
+                )}
+                <Text variant="bodyMedium">Others</Text>
+                <Text variant="bodySmall">{JSON.stringify(device.serviceUUIDs)}</Text>
+            </View>
+
+            <Button mode="contained"
+                    onPress={handleConnect}
+                    loading={loading}
+                    disabled={connected}
+                    style={{alignSelf: 'stretch', marginTop: 20}}>
+                <Text adjustsFontSizeToFit>
+                    Connect
+                </Text>
+            </Button>
+        </View>
+    );
+};
+
+type ColorRouteProps = {
+    device: Device;
+}
+
+const ColorRoute = ({device}: ColorRouteProps) => {
     const [rgbw, setRGBW] = useState({r: 255, g: 0, b: 0, w: 0});
-
     useEffect(() => {
-        let subscription: any;
-
-        const checkConnection = async () => {
-            try {
-                const connectedDevice = await bleManager.isDeviceConnected(device.id);
-                setConnected(connectedDevice);
-            } catch (error) {
-                console.error('Error checking connection:', error);
-                setConnected(false);
-            }
+        const onSuccess = () => {
+            debugCounter++;
         };
-
-        subscription = bleManager.onDeviceDisconnected(device.id, () => {
-            console.log('Device disconnected');
-            setConnected(false);
-        });
-
-        checkConnection();
-
-        return () => {
-            subscription.remove();
+        const onError = (error: any) => {
+            errorCounter++;
+            errorMsg = `WriteColor: ${error}`;
         };
-    }, [device.id]);
-
-    useEffect(() => {
-        const payload = buildCommand(rgbw);
-        sendColorToDevice(device, payload);
+        BLEDeviceHandler.writeLightColor(rgbw, onSuccess, onError)
+            .then(() => {
+            })
+            .catch(error => {
+            });
     }, [device, rgbw]);
 
     const hexToRGB = (hex: string) => {
@@ -122,15 +178,14 @@ function DeviceScreen({route}: DeviceScreenProps) {
 
     return (
         <View style={styles.container}>
-            <Text variant="titleLarge">{device.name || 'Unknown Device'}</Text>
-            <Text variant="bodyMedium">{device.id}</Text>
-            <Text variant="bodySmall">{isLightBulb ? 'Detected' : 'Unknown device'}</Text>
-            <Text>Sent counter: {debugCounter}, payload: {buildCommand(rgbw)}</Text>
+            <Text variant="bodyMedium">{JSON.stringify(rgbw)}</Text>
 
             <ColorPicker value="red" onComplete={onSelectRGB}>
                 <Preview/>
-                <Panel1 style={styles.panelStyle}/>
+                <Panel2 style={styles.panelStyle}/>
                 <HueSlider style={styles.sliderStyle}/>
+                <HSLSaturationSlider style={styles.sliderStyle}/>
+                <LuminanceSlider style={styles.sliderStyle}/>
             </ColorPicker>
 
             <ColorPicker value="#FFF4E5" onComplete={onSelectWhite}>
@@ -138,6 +193,96 @@ function DeviceScreen({route}: DeviceScreenProps) {
                 <BrightnessSlider style={styles.sliderStyle}/>
             </ColorPicker>
         </View>
+    );
+};
+
+
+type DebugRouteProps = {
+    device: Device;
+}
+
+const DebugRoute = ({device}: DebugRouteProps) => {
+
+    useEffect(() => {
+    }, [debugCounter, errorCounter, errorMsg]);
+
+    return (
+        <View style={styles.container}>
+            <Text variant="titleLarge">Sent counter: {debugCounter}, error: {errorCounter}</Text>
+            <Text variant="bodyLarge">{errorMsg}</Text>
+        </View>
+    );
+};
+
+type DeviceScreenProps = NativeStackScreenProps<RootStackParamList, 'DeviceScreen'>;
+
+function DeviceScreen({route}: DeviceScreenProps) {
+    const {device} = route.params;
+    const [connected, setConnected] = useState<boolean>(false);
+    const handleConnected = () => setConnected(true);
+
+    const layout = useWindowDimensions();
+    const [index, setIndex] = React.useState(0);
+    const {colors} = useTheme();
+
+    useEffect(() => {
+        let subscription: any;
+
+        const checkConnection = async () => {
+            try {
+                const connectedDevice = await BLEDeviceHandler.isDeviceConnected(device.id);
+                setConnected(connectedDevice);
+            } catch (error) {
+                console.error('Error checking connection:', error);
+                setConnected(false);
+            }
+        };
+
+        subscription = BLEDeviceHandler.onDeviceDisconnected(device.id, () => {
+            console.log('Device disconnected');
+            setConnected(false);
+        });
+
+        checkConnection();
+
+        return () => {
+            subscription.remove();
+        };
+    }, [device.id]);
+
+    const renderScene = (props: SceneRendererProps & { route: Route }) => {
+        switch (props.route.key) {
+            case 'info':
+                return <InfoRoute device={device}
+                                  connected={connected}
+                                  onConnected={handleConnected}
+                />;
+            case 'color':
+                return <ColorRoute device={device}/>;
+            case 'debug':
+                return <DebugRoute device={device}/>;
+            default:
+                return null;
+        }
+    };
+
+    return (
+        <TabView
+            navigationState={{index, routes}}
+            renderScene={renderScene}
+            onIndexChange={setIndex}
+            initialLayout={{width: layout.width}}
+            swipeEnabled={false}
+            renderTabBar={props => (
+                <TabBar
+                    {...props}
+                    style={{backgroundColor: colors.primary}}
+                    indicatorStyle={{backgroundColor: colors.outline}}
+                    activeColor={colors.onPrimary}
+                    inactiveColor={colors.onSurface}
+                />
+            )}
+        />
     );
 }
 
