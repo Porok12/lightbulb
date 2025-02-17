@@ -100,19 +100,19 @@ const InfoRoute = (props: InfoRouteProps) => {
                 <Text variant="bodySmall">Connection status: {connected ? 'Connected' : 'Disconnected'}</Text>
 
                 <Text variant="titleLarge" style={{marginTop: 10}}>Services</Text>
-                {device.serviceUUIDs?.includes(services.deviceInfo.serviceUUID) && (
+                {device.serviceUUIDs?.map(s => s.toLowerCase())?.includes(services.deviceInfo.serviceUUID.toLowerCase()) && (
                     <>
                         <Text variant="titleSmall">Device Info</Text>
                         <Text variant="bodyMedium">Firmware version: {firmwareVersion}</Text>
                     </>
                 )}
-                {device.serviceUUIDs?.includes(services.battery.serviceUUID) && (
+                {device.serviceUUIDs?.map(s => s.toLowerCase())?.includes(services.battery.serviceUUID.toLowerCase()) && (
                     <>
                         <Text variant="titleSmall">Battery</Text>
                         <Text variant="bodyMedium">Level: {batteryLevel}</Text>
                     </>
                 )}
-                {device.serviceUUIDs?.includes(services.light.serviceUUID) && (
+                {device.serviceUUIDs?.map(s => s.toLowerCase())?.includes(services.light.serviceUUID.toLowerCase()) && (
                     <>
                         <Text variant="titleSmall">Light</Text>
                         <Text variant="bodyMedium">---</Text>
