@@ -112,7 +112,8 @@ class BLEDeviceHandler {
                 BATTERY_SERVICE_UUID,
                 BATTERY_CHARACTERISTIC_UUID,
             );
-            const batteryLevel = parseInt(characteristic.value ?? '0', 16);
+            //const batteryLevel = parseInt(characteristic.value ?? '0', 16);
+            const batteryLevel = Buffer.from(characteristic.value ?? '0', 'base64')[0];
             console.log(`🔋 Battery Level: ${batteryLevel}%`);
             return batteryLevel;
         } catch (error) {
