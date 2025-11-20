@@ -1,3 +1,18 @@
+```shell
+cd android
+./gradlew clean
+cd ..
+npm run android
+```
+
+```shell
+cd android
+./gradlew assembleRelease
+cd ..
+```
+
+`npx react-native log-android`
+
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
 # Getting Started
